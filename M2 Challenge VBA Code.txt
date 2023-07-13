@@ -1,0 +1,140 @@
+Option Explicit
+
+Sub multiple_year()
+    Dim ws As Worksheet
+    
+    For Each ws In Worksheets
+    ws.Activate
+   
+    Const FIRST_DATA_ROW As Integer = 2
+    Const IN_TICKER_COL As Integer = 1
+    Const IN_VOLUME As Integer = 7
+    
+    Const OUT_TICKER_COL As Integer = 9
+    Const YEARLY_CHANGE_COL As Integer = 10
+    Const PERCENT_CHANGE_COL As Integer = 11
+    Const OUT_VOLUME_COL As Integer = 12
+    
+    Const COLOR_RED As Integer = 3
+    Const COLOR_GREEN As Integer = 4
+    
+    Const HEADER_ROW As Integer = 1
+    Const MAX_INC_ROW As Integer = 2
+    Const MAX_DEC_ROW As Integer = 3
+    Const MAX_VOL_ROW As Integer = 4
+    
+    Const MAX_LABELS_COL As Integer = 15
+    Const MAX_TICKERS_COL As Integer = 16
+    Const MAX_VALUES_COL As Integer = 17
+    
+    Dim currentTicker As String
+    Dim nextTicker As String
+    Dim lastRow As Long
+    Dim inputRow As Long
+    Dim outputRow As Long
+    
+    Dim openPrice As Double
+    Dim closePrice As Double
+    Dim changeRatio As Double
+    Dim yearlyChange As Double
+    Dim stockVolume As LongLong
+    Dim yearlyChangeColor As Integer
+    Dim maxIncVal As Double
+    Dim maxIncTicker As String
+    Dim maxDecVal As Double
+    Dim maxDecTicker As String
+    Dim maxVolVal As LongLong
+    Dim maxVolTicker As String
+    
+    
+                        
+    lastRow = Cells(Rows.Count, IN_TICKER_COL).End(xlUp).Row
+    
+       
+    'prepare for first stock
+    outputRow = FIRST_DATA_ROW
+    stockVolume = 0
+    openPrice = Cells(FIRST_DATA_ROW, 3).Value
+        
+          
+    For inputRow = FIRST_DATA_ROW To lastRow
+    
+    
+      currentTicker = Cells(inputRow, IN_TICKER_COL).Value
+      nextTicker = Cells(inputRow + 1, IN_TICKER_COL).Value
+      stockVolume = Cells(inputRow, IN_VOLUME).Value + stockVolume
+            
+      'Last row of current stock
+      If nextTicker <> currentTicker Then
+        'inputs
+        closePrice = Cells(inputRow, 6).Value
+                
+        'calculations
+        yearlyChange = closePrice - openPrice
+        If yearlyChange > 0 Then
+            yearlyChangeColor = COLOR_GREEN
+        Else
+            yearlyChangeColor = COLOR_RED
+        End If
+        changeRatio = yearlyChange / openPrice
+        
+        If stockVolume > maxVolVal Then
+            maxVolVal = stockVolume
+            maxVolTicker = currentTicker
+        End If
+        
+        If changeRatio > maxIncVal Then
+            maxIncVal = changeRatio
+            maxIncTicker = currentTicker
+        End If
+        
+        If changeRatio < maxDecVal Then
+            maxDecVal = changeRatio
+            maxDecTicker = currentTicker
+        End If
+        
+                
+        'ouputs
+        
+        Cells(outputRow, OUT_TICKER_COL).Value = currentTicker
+        Cells(outputRow, YEARLY_CHANGE_COL).Value = yearlyChange
+        Cells(outputRow, YEARLY_CHANGE_COL).Interior.ColorIndex = yearlyChangeColor
+        Cells(outputRow, PERCENT_CHANGE_COL).Value = FormatPercent(changeRatio)
+        Cells(outputRow, OUT_VOLUME_COL).Value = stockVolume
+        
+        'max outputs
+        Cells(2, 16).Value = maxIncTicker
+        Cells(3, 16).Value = maxDecTicker
+        Cells(4, 16).Value = maxVolTicker
+        Cells(2, 17).Value = maxIncVal
+        Cells(3, 17).Value = maxDecVal
+        Cells(4, 17).Value = maxVolVal
+        
+        'Prepare for next stock
+        outputRow = outputRow + 1
+        openPrice = Cells(inputRow + 1, 3).Value
+        stockVolume = 0
+        
+      End If
+      
+    Next inputRow
+        
+    'create column headers
+    Cells(HEADER_ROW, OUT_TICKER_COL).Value = "Ticker"
+    Cells(HEADER_ROW, YEARLY_CHANGE_COL).Value = "Yearly Change"
+    Cells(HEADER_ROW, PERCENT_CHANGE_COL).Value = "Percent Change"
+    Cells(HEADER_ROW, OUT_VOLUME_COL).Value = "Total Stock Volume"
+           
+    'create greatest lables for rows and columns
+    Cells(HEADER_ROW, MAX_TICKERS_COL).Value = "Ticker"
+    Cells(HEADER_ROW, MAX_VALUES_COL).Value = "Value"
+    Cells(MAX_INC_ROW, MAX_LABELS_COL).Value = "Greatest % Increase"
+    Cells(MAX_DEC_ROW, MAX_LABELS_COL).Value = "Greatest % Decrease"
+    Cells(MAX_VOL_ROW, MAX_LABELS_COL).Value = "Greatest Total Volume"
+    
+    Next ws
+    
+    MsgBox "Done"
+End Sub
+
+
